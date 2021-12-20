@@ -59,7 +59,9 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
-
+#define u8   uint8_t
+#define u16  uint16_t
+#define u32  uint32_t
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

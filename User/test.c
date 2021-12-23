@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "usart.h"
 #include "wifi_config.h"
+#include "lcd.h"
 
 uint16_t USART2_RX_STA = 0;
 uint8_t USART2_TX_BUF[USART2_MAX_SEND_LEN];
@@ -60,6 +61,7 @@ void Test(void)
 			USART1_RX_STA = 0;
 			if (mode)
 			{
+				LCD_ShowString(30, 40, 200, 24, 24, (uint8_t*) "Mini STM32 ^_^");
 				usart2_printf("%s", USART1_RX_BUF);
 			}
 			else

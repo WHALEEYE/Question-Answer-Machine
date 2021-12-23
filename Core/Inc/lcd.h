@@ -76,24 +76,28 @@
 //修改SSD1963 LCD屏的驱动参数.
 //////////////////////////////////////////////////////////////////////////////////	 
 
-	 
 //LCD重要参数集
-typedef struct  
-{										    
+typedef struct
+{
 	uint16_t width;			//LCD 宽度
 	uint16_t height;			//LCD 高度
 	uint16_t id;				//LCD ID
-	uint8_t  dir;			//横屏还是竖屏控制：0，竖屏；1，横屏。	
-	uint16_t	wramcmd;		//开始写gram指令
+	uint8_t dir;			//横屏还是竖屏控制：0，竖屏；1，横屏。
+	uint16_t wramcmd;		//开始写gram指令
 	uint16_t setxcmd;		//设置x坐标指令
-	uint16_t  setycmd;		//设置y坐标指令	 
-}_lcd_dev; 	  
+	uint16_t setycmd;		//设置y坐标指令
+} _lcd_dev;
+
+typedef enum PictureType
+{
+	WARNING = 0
+} PictureType;
 
 //LCD参数
 extern _lcd_dev lcddev;	//管理LCD重要参数
 //LCD的画笔颜色和背景色	   
-extern uint16_t  POINT_COLOR;//默认红色    
-extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
+extern uint16_t POINT_COLOR;	//默认红色
+extern uint16_t BACK_COLOR; //背景颜色.默认为白色
 
 ////////////////////////////////////////////////////////////////////
 //-----------------LCD端口定义---------------- 
@@ -107,23 +111,21 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define PCout(n)   BIT_ADDR(GPIOC_ODR_Addr,n)  //输出
 #define PCin(n)    BIT_ADDR(GPIOC_IDR_Addr,n)  //输入
 #define	LCD_LED PCout(10) 				//LCD背光    	PC10 
- 
+
 #define	LCD_CS_SET  GPIOC->BSRR=1<<9    //片选端口  		PC9
 #define	LCD_RS_SET	GPIOC->BSRR=1<<8    //数据/命令 		PC8	   
 #define	LCD_WR_SET	GPIOC->BSRR=1<<7    //写数据			PC7
 #define	LCD_RD_SET	GPIOC->BSRR=1<<6    //读数据			PC6
-								    
+
 #define	LCD_CS_CLR  GPIOC->BRR=1<<9     //片选端口  		PC9
 #define	LCD_RS_CLR	GPIOC->BRR=1<<8     //数据/命令		PC8	   
 #define	LCD_WR_CLR	GPIOC->BRR=1<<7     //写数据			PC7
 #define	LCD_RD_CLR	GPIOC->BRR=1<<6     //读数据			PC6   
 
-
 //PB0~15,作为数据线
 #define DATAOUT(x) GPIOB->ODR=x; //数据输出
 #define DATAIN     GPIOB->IDR;   //数据输入	
 
- 
 //////////////////////////////////////////////////////////////////////
 //扫描方向定义
 #define L2R_U2D  0 //从左到右,从上到下
@@ -137,7 +139,7 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define D2U_R2L  7 //从下到上,从右到左
 
 #define DFT_SCAN_DIR  L2R_U2D  //默认的扫描方向
-	 
+
 //扫描方向定义
 #define L2R_U2D  0 //从左到右,从上到下
 #define L2R_D2U  1 //从左到右,从下到上
@@ -172,39 +174,45 @@ extern uint16_t  BACK_COLOR; //背景颜色.默认为白色
 #define LIGHTBLUE      	 0X7D7C	//浅蓝色  
 #define GRAYBLUE       	 0X5458 //灰蓝色
 //以上三色为PANEL的颜色 
- 
+
 #define LIGHTGREEN     	 0X841F //浅绿色 
 #define LGRAY 			 0XC618 //浅灰色(PANNEL),窗体背景色
 
 #define LGRAYBLUE        0XA651 //浅灰蓝色(中间层颜色)
 #define LBBLUE           0X2B12 //浅棕蓝色(选择条目的反色)
-	    															  
+
 void LCD_Init(void); // Initialization
 void LCD_DisplayOn(void); // Open the display
 void LCD_DisplayOff(void); // Close the display
 void LCD_Clear(uint16_t Color); // Clear the screen with specific color
-void LCD_SetCursor(uint16_t Xpos, uint16_t Ypos);	// Set the position of cursor
-void LCD_DrawPoint(uint16_t x,uint16_t y); // Set color for a point
-void LCD_Fast_DrawPoint(uint16_t x,uint16_t y,uint16_t color); // Set color for a point(quicker)
-uint16_t LCD_ReadPoint(uint16_t x,uint16_t y); // Read the color of a point
-void LCD_Draw_Circle(uint16_t x0,uint16_t y0,uint8_t r); // Draw a circle
+void LCD_SetCursor(uint16_t Xpos, uint16_t Ypos); // Set the position of cursor
+void LCD_DrawPoint(uint16_t x, uint16_t y); // Set color for a point
+void LCD_Fast_DrawPoint(uint16_t x, uint16_t y, uint16_t color); // Set color for a point(quicker)
+uint16_t LCD_ReadPoint(uint16_t x, uint16_t y); // Read the color of a point
+void LCD_Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r); // Draw a circle
 void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2); // Draw a line
 void LCD_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);	// Draw a rectangle
-void LCD_Fill(uint16_t sx,uint16_t sy,uint16_t ex,uint16_t ey,uint16_t color);	// Fill the area with color
-void LCD_Color_Fill(uint16_t sx,uint16_t sy,uint16_t ex,uint16_t ey,uint16_t *color);	// Fill the area with color
-void LCD_ShowChar(uint16_t x,uint16_t y,uint8_t num,uint8_t size,uint8_t mode);	// Display a char
-void LCD_ShowNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t size); // Display number without the leading zeros
-void LCD_ShowxNum(uint16_t x,uint16_t y,uint32_t num,uint8_t len,uint8_t size,uint8_t mode); // Display number with the leading zeros
+void LCD_Fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey,
+		uint16_t color);	// Fill the area with color
+void LCD_Color_Fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey,
+		uint16_t *color);	// Fill the area with color
+void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num, uint8_t size,
+		uint8_t mode);	// Display a char
+void LCD_ShowPic(uint16_t x, uint16_t y, PictureType pic_type);
+void LCD_ShowNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len,
+		uint8_t size); // Display number without the leading zeros
+void LCD_ShowxNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len,
+		uint8_t size, uint8_t mode); // Display number with the leading zeros
 void LCD_ShowString(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
 		uint8_t size, uint8_t *p); // Display a string
 
 void LCD_WriteReg(uint16_t LCD_Reg, uint16_t LCD_RegValue);
 uint16_t LCD_ReadReg(uint16_t LCD_Reg);
 void LCD_WriteRAM_Prepare(void);
-void LCD_WriteRAM(uint16_t RGB_Code);		  
+void LCD_WriteRAM(uint16_t RGB_Code);
 void LCD_Scan_Dir(uint8_t dir); // Set the scan direction
 void LCD_Display_Dir(uint8_t dir); // Set the display direction
-void LCD_Set_Window(uint16_t sx,uint16_t sy,uint16_t width,uint16_t height);
+void LCD_Set_Window(uint16_t sx, uint16_t sy, uint16_t width, uint16_t height);
 
 //写数据函数
 #define LCD_WR_DATA(data){\
@@ -232,18 +240,6 @@ LCD_CS_SET;\
 #define SSD_HPS	(SSD_HOR_BACK_PORCH)
 #define SSD_VT 	(SSD_VER_RESOLUTION+SSD_VER_BACK_PORCH+SSD_VER_FRONT_PORCH)
 #define SSD_VPS (SSD_VER_BACK_PORCH)
-						  		 
+
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
 

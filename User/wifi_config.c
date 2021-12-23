@@ -1,6 +1,7 @@
 #include "wifi_config.h"
 #include "test.h"
 #include "usart.h"
+#include "lcd.h"
 //用户配置区
 //连接端口号:8086,可自行修改为其他端口.
 const char *portnum = "8086";
@@ -24,6 +25,10 @@ void wifi_echo(uint8_t mode)
 {
 	if (USART2_RX_STA == 1)		//接收到一次数据了
 	{
+		LCD_Clear(WHITE);
+		POINT_COLOR = BLACK;
+		BACK_COLOR = WHITE;
+		LCD_ShowString(30, 40, 200, 24, 24, USART2_RX_BUF);
 		usart1_printf("%s", USART2_RX_BUF);	//发送到串口
 		if (mode)
 		{

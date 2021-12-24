@@ -28,7 +28,10 @@ void wifi_echo(uint8_t mode)
 		LCD_Clear(WHITE);
 		POINT_COLOR = BLACK;
 		BACK_COLOR = WHITE;
-		LCD_ShowString(30, 40, 200, 24, 24, USART2_RX_BUF);
+		if (*USART2_RX_BUF == '\r' || *USART2_RX_BUF == '\n')
+			LCD_ShowString(30, 40, 200, 24, 24, USART2_RX_BUF + 2);
+		else
+			LCD_ShowString(30, 40, 200, 24, 24, USART2_RX_BUF);
 		usart1_printf("%s", USART2_RX_BUF);	//发送到串口
 		if (mode)
 		{
@@ -94,7 +97,7 @@ uint8_t wifi_send_cmd(char *cmd, char *ack, uint16_t waittime)
 				TheGET = wifi_check_cmd(ack);
 				memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN); //清空接收缓存区
 				HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF,
-						USART2_MAX_RECV_LEN); //进行下一次接收
+				USART2_MAX_RECV_LEN); //进行下一次接收
 			}
 		}
 		if (TheGET != NULL)
@@ -129,7 +132,7 @@ uint8_t wifi_send_data(char *data, char *ack, uint16_t waittime)
 				TheGET = wifi_check_cmd(ack);
 				memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN); //清空接收缓存区
 				HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF,
-						USART2_MAX_RECV_LEN);
+				USART2_MAX_RECV_LEN);
 			}
 		}
 		if (TheGET != NULL)

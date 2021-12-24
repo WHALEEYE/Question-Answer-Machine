@@ -12,6 +12,9 @@ uint8_t USART2_RX_BUF[USART2_MAX_RECV_LEN];
 uint16_t USART1_RX_STA = 0;
 uint8_t USART1_RX_BUF[USART1_MAX_RECV_LEN];
 
+uint8_t STATUS;
+char ANSWER = ' ';
+
 //串口打印函数
 void usart1_printf(char *fmt, ...)
 {
@@ -53,24 +56,53 @@ void Test(void)
 	usart1_printf("hello\r\n");
 	uint8_t mode = 0;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
 	wifi_init(mode);
+	STATUS = 0;
 	while (1)
 	{
-		wifi_echo(1);
-		if (USART1_RX_STA == 1)
+		if (mode)
 		{
-			USART1_RX_STA = 0;
-			if (mode)
+			if (USART1_RX_STA == 1)
 			{
+				USART1_RX_STA = 0;
 				usart2_printf("%s", USART1_RX_BUF);
 			}
-			else
-			{
-				uint8_t lenth = strlen((char*) USART1_RX_BUF);
-				wifi_ap_send(USART1_RX_BUF, lenth);
-			}
 			memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
-			HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+			HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF,
+			USART1_MAX_RECV_LEN);
 		}
+		else
+		{
+			switch (STATUS)
+			{
+			case 0:
+				// Wait until the question is received
+				if (USART1_RX_STA == 1)
+				{
+					USART1_RX_STA = 0;
+					uint8_t lenth = strlen((char*) USART1_RX_BUF);
+					if (!strcmp("exit\r\n", USART1_RX_BUF))
+					{
+						STATUS = 2;
+						break;
+					}
+					// Set the answer
+					ANSWER = *(USART1_RX_BUF + length - 1);
+					// Send the question to respondent
+					wifi_ap_send(USART1_RX_BUF, lenth - 2);
+					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF,
+					USART1_MAX_RECV_LEN);
+				}
+				break;
+			case 1:
+				wifi_echo(1);
+				break;
+			case 2:
+				// EXIT
+				break;
+			}
+		}
+
 	}
 }
 

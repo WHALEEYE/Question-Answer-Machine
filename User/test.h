@@ -11,6 +11,9 @@ extern uint16_t USART2_RX_STA;
 extern uint8_t USART2_TX_BUF[USART2_MAX_SEND_LEN];
 extern uint8_t USART2_RX_BUF[USART2_MAX_RECV_LEN];
 
+uint8_t STATUS;
+char ANSWER = ' ';
+
 void usart1_printf(char *fmt, ...);
 void usart2_printf(char *fmt, ...);
 void Test(void);

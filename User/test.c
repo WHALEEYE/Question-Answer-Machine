@@ -12,8 +12,14 @@ uint8_t USART2_RX_BUF[USART2_MAX_RECV_LEN];
 uint16_t USART1_RX_STA = 0;
 uint8_t USART1_RX_BUF[USART1_MAX_RECV_LEN];
 
+uint8_t TIMER_count = 0;
+uint8_t TIMER_MAX_count = 0;
+uint8_t countdown_flag = 0;
+
 uint8_t STATUS;
 char ANSWER = ' ';
+
+extern TIM_HandleTypeDef htim3;
 
 //串口打印函数
 void usart1_printf(char *fmt, ...)
@@ -76,10 +82,10 @@ void Test(void)
 			{
 			case 0:
 				// Wait until the question is received
-				if (USART1_RX_STA == 1)
+				if (USART1_RX_STA == 1 && countdown_flag == 0)
 				{
 					USART1_RX_STA = 0;
-					uint8_t lenth = strlen((char*) USART1_RX_BUF);
+					uint8_t length = strlen((char*) USART1_RX_BUF);
 					if (!strcmp("exit\r\n", USART1_RX_BUF))
 					{
 						STATUS = 2;
@@ -88,14 +94,26 @@ void Test(void)
 					// Set the answer
 					ANSWER = *(USART1_RX_BUF + length - 1);
 					// Send the question to respondent
-					wifi_ap_send(USART1_RX_BUF, lenth - 2);
+					wifi_ap_send(USART1_RX_BUF, length - 2);
+					// Clear the buffer and refuse to read question from USART anymore
+					HAL_UART_DMAStop(&huart1);
 					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
-					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF,
-					USART1_MAX_RECV_LEN);
+					// Start count down
+					usart1_printf("[start count down]");
+					TIMER_count = 0;
+					TIMER_MAX_count = 5; // 还需添加倒计时多少秒
+					countdown_flag = 1;
+					HAL_TIM_Base_Start_IT(&htim3);
+					STATUS = 1;
 				}
 				break;
 			case 1:
 				wifi_echo(1);
+				if (countdown_flag == 1) {
+
+				} else {
+					usart1_printf("[count down over in case 1]");
+				}
 				break;
 			case 2:
 				// EXIT
@@ -131,6 +149,23 @@ void UART1_IDLECallback(UART_HandleTypeDef *huart)
 			HAL_UART_DMAStop(huart);            //停止DMA接收
 			USART1_RX_STA = 1;                  //接收完成标志位
 		}
+	}
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	TIMER_count += 1;
+	usart1_printf("%d\r\n", TIMER_count);
+	wifi_ap_send(&TIMER_count, strlen((char*) TIMER_count));
+	if (TIMER_count >= TIMER_MAX_count) {
+		usart1_printf("[count down over]");
+		countdown_flag = 0;
+		TIMER_count = 0;
+		TIMER_MAX_count = 0;
+		HAL_TIM_Base_Stop_IT(&htim3);
+		HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+		uint8_t response_message[20] = "[Time Exceed Limit]";
+		usart2_printf("[Time Exceed Limit]");
+		wifi_ap_send(response_message, strlen((char*) response_message));
 	}
 }
 

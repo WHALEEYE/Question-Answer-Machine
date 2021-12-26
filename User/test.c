@@ -74,6 +74,7 @@ void Test(void)
 	uint8_t mode = 0;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
 	wifi_init(mode);
 	STATUS = 0;
+	wifi_echo(1);
 	while (1)
 	{
 		if (END_GAME_FLAG)
@@ -96,7 +97,6 @@ void Test(void)
 		// Questioner
 		else
 		{
-			wifi_echo(1);
 			switch (STATUS)
 			{
 			// Questioning mode

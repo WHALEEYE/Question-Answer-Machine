@@ -91,6 +91,7 @@ void Test(void)
 			{
 			// Questioning mode
 			case 0:
+				wifi_echo(1);
 				// Wait until the question is received
 				if (USART1_RX_STA == 1 && countdown_flag == 0)
 				{
@@ -161,7 +162,8 @@ void Test(void)
 				// Finish counting down
 				else
 				{
-					// usart1_printf("[count down over in case 1]");
+					STATUS = 0;
+					usart1_printf("[count down over in case 1]");
 				}
 				break;
 			// Judging mode

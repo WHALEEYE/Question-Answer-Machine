@@ -75,6 +75,7 @@ void Test(void)
 		// Respondent
 		if (mode)
 		{
+			wifi_echo(1);
 			if (USART1_RX_STA == 1)
 			{
 				USART1_RX_STA = 0;
@@ -96,7 +97,7 @@ void Test(void)
 				if (USART1_RX_STA == 1 && countdown_flag == 0)
 				{
 					USART1_RX_STA = 0;
-					if (!strcmp("exit\r\n", (char*)USART1_RX_BUF))
+					if (!strcmp("exit\r\n", (char*) USART1_RX_BUF))
 					{
 						STATUS = 2;
 						break;
@@ -104,26 +105,30 @@ void Test(void)
 					// Set the 4 part of a whole question
 					char delims[] = "#";
 					char *result = NULL;
-					result = strtok((char*)USART1_RX_BUF, delims);
-					if(result != NULL) {
+					result = strtok((char*) USART1_RX_BUF, delims);
+					if (result != NULL)
+					{
 						strcpy(QUESTION, result);
 						usart1_printf("%s\r\n", result);
 						usart1_printf("%s\r\n", QUESTION);
-					    result = strtok( NULL, delims );
+						result = strtok( NULL, delims);
 					}
-					if(result != NULL) {
+					if (result != NULL)
+					{
 						strcpy(POINT, result);
 						usart1_printf("%s\r\n", result);
 						usart1_printf("%s\r\n", POINT);
-					    result = strtok( NULL, delims );
+						result = strtok( NULL, delims);
 					}
-					if(result != NULL) {
+					if (result != NULL)
+					{
 						strcpy(MAX_TIME, result);
 						usart1_printf("%s\r\n", result);
 						usart1_printf("%s\r\n", MAX_TIME);
-					    result = strtok( NULL, delims );
+						result = strtok( NULL, delims);
 					}
-					if(result != NULL) {
+					if (result != NULL)
+					{
 						strcpy(ANSWER, result);
 						usart1_printf("%s\r\n", result);
 						usart1_printf("%s\r\n", ANSWER);
@@ -131,15 +136,15 @@ void Test(void)
 					// ANSWER = *(USART1_RX_BUF + length - 1);
 					// Send the question to respondent
 					strncat(WHOLE_QUESTION, "[", 5);
-					strncat(WHOLE_QUESTION, QUESTION, strlen(QUESTION)+5);
+					strncat(WHOLE_QUESTION, QUESTION, strlen(QUESTION) + 5);
 					strncat(WHOLE_QUESTION, "][", 5);
-					strncat(WHOLE_QUESTION, POINT, strlen(POINT)+5);
+					strncat(WHOLE_QUESTION, POINT, strlen(POINT) + 5);
 					strncat(WHOLE_QUESTION, "][", 5);
-					strncat(WHOLE_QUESTION, MAX_TIME, strlen(MAX_TIME)+5);
+					strncat(WHOLE_QUESTION, MAX_TIME, strlen(MAX_TIME) + 5);
 					strncat(WHOLE_QUESTION, "]", 5);
 					usart1_printf("%s\r\n", WHOLE_QUESTION);
 					uint8_t length = strlen(WHOLE_QUESTION);
-					wifi_ap_send((uint8_t*)WHOLE_QUESTION, length);
+					wifi_ap_send((uint8_t*) WHOLE_QUESTION, length);
 					// Clear the buffer and refuse to read question from USART anymore
 					HAL_UART_DMAStop(&huart1);
 					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
@@ -152,11 +157,12 @@ void Test(void)
 					STATUS = 1;
 				}
 				break;
-			// Answer-receiving mode
+				// Answer-receiving mode
 			case 1:
 				wifi_echo(1);
 				// Still counting down
-				if (countdown_flag == 1) {
+				if (countdown_flag == 1)
+				{
 
 				}
 				// Finish counting down
@@ -166,7 +172,7 @@ void Test(void)
 					usart1_printf("[count down over in case 1]");
 				}
 				break;
-			// Judging mode
+				// Judging mode
 			case 2:
 				// EXIT
 				break;
@@ -204,11 +210,13 @@ void UART1_IDLECallback(UART_HandleTypeDef *huart)
 	}
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
 	TIMER_count += 1;
 	usart1_printf("%d\r\n", TIMER_count);
 	wifi_ap_send(&TIMER_count, strlen((char*) TIMER_count));
-	if (TIMER_count >= TIMER_MAX_count) {
+	if (TIMER_count >= TIMER_MAX_count)
+	{
 		usart1_printf("[count down over]");
 		countdown_flag = 0;
 		TIMER_count = 0;

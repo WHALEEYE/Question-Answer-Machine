@@ -24,7 +24,6 @@ char ANSWER[100];
 char QUESTION[100];
 char MAX_TIME[100];
 char POINT[100];
-char WHOLE_QUESTION[500];
 
 extern TIM_HandleTypeDef htim3;
 
@@ -135,23 +134,27 @@ void Test(void)
 					}
 					// ANSWER = *(USART1_RX_BUF + length - 1);
 					// Send the question to respondent
+					char WHOLE_QUESTION[500];
 					strncat(WHOLE_QUESTION, "[", 5);
 					strncat(WHOLE_QUESTION, QUESTION, strlen(QUESTION) + 5);
 					strncat(WHOLE_QUESTION, "][", 5);
 					strncat(WHOLE_QUESTION, POINT, strlen(POINT) + 5);
 					strncat(WHOLE_QUESTION, "][", 5);
 					strncat(WHOLE_QUESTION, MAX_TIME, strlen(MAX_TIME) + 5);
-					strncat(WHOLE_QUESTION, "]", 5);
-					usart1_printf("%s\r\n", WHOLE_QUESTION);
+					strncat(WHOLE_QUESTION, "]\r\n", 10);
+					usart1_printf("%s", WHOLE_QUESTION);
 					uint8_t length = strlen(WHOLE_QUESTION);
 					wifi_ap_send((uint8_t*) WHOLE_QUESTION, length);
 					// Clear the buffer and refuse to read question from USART anymore
 					HAL_UART_DMAStop(&huart1);
 					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					memset(WHOLE_QUESTION, 0, length);
 					// Start count down
-					usart1_printf("[start count down]");
+					usart1_printf("[start count down]\r\n");
+					char countdown_start_message[500] = "[start count down]\r\n";
+					wifi_ap_send((uint8_t*) countdown_start_message, strlen(countdown_start_message));
 					TIMER_count = 0;
-					TIMER_MAX_count = atoi(MAX_TIME); // 还需添加倒计时多少秒
+					TIMER_MAX_count = atoi(MAX_TIME);
 					countdown_flag = 1;
 					HAL_TIM_Base_Start_IT(&htim3);
 					STATUS = 1;
@@ -214,7 +217,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	TIMER_count += 1;
 	usart1_printf("%d\r\n", TIMER_count);
-	wifi_ap_send(&TIMER_count, strlen((char*) TIMER_count));
+	char counting_message[25];
+	itoa(TIMER_count, counting_message, 10);
+	wifi_ap_send((uint8_t*)counting_message, strlen(counting_message));
 	if (TIMER_count >= TIMER_MAX_count)
 	{
 		usart1_printf("[count down over]");
@@ -222,8 +227,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		TIMER_count = 0;
 		TIMER_MAX_count = 0;
 		// Send message to respondent
-		uint8_t response_message[20] = "[Time Exceed Limit]";
-		wifi_ap_send(response_message, strlen((char*) response_message));
+		char countdown_finish_message[50] = "[Time Exceed Limit]\r\n";
+		wifi_ap_send((uint8_t*)countdown_finish_message, strlen(countdown_finish_message));
 		// Close the interrupt and open DMA receive
 		HAL_TIM_Base_Stop_IT(&htim3);
 		HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);

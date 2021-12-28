@@ -207,6 +207,24 @@ void Test(void)
 							TIMER_MAX_count = 0;
 							HAL_TIM_Base_Stop_IT(&htim3);
 							STATUS = 2;
+
+							//Respondent’s awarded point on this specific question should be added to total points
+							total_score += new_score;
+
+							// Display respondent’s current total mark: [Current total mark]
+							HAL_Delay(1000);
+							char total_mark_message[500];
+							sprintf(total_mark_message, "[Current total mark : %d ]\r\n", total_score);
+							usart1_printf("%s", total_mark_message);
+							wifi_ap_send((uint8_t*) total_mark_message, strlen(total_mark_message));
+
+							// Choose to either enter questioning mode again for next question or exit.
+							// Display information: [Next Question]/[End the round]
+							HAL_Delay(1000);
+							char continue_or_end_message[100] =
+									"[Next Question]/[End the round] (input y/n)\r\n";
+							usart1_printf("%s", continue_or_end_message);
+							wifi_ap_send((uint8_t*) continue_or_end_message, strlen(continue_or_end_message));
 						}
 						// Answer is incorrect
 						else
@@ -245,83 +263,73 @@ void Test(void)
 
 					// enter the judging mode
 					STATUS = 2;
-				}
-				Judge_waiting_flag = 0;
-				break;
-			// Judging mode
-			case 2:
-				if (!Judge_waiting_flag)
-				{
-					// Respondent’s awarded point on this specific question should be added to total points
-					total_score += new_score;
 
 					// Display respondent’s current total mark: [Current total mark]
-					char total_score_str[25];
-					itoa(total_score, total_score_str, 10);
-					char total_mark_message[500] = "[Current total mark : ";
-					strncat(total_mark_message, total_score_str, 50);
-					strncat(total_mark_message, "]\r\n", 10);
+					HAL_Delay(1000);
+					char total_mark_message[500];
+					sprintf(total_mark_message, "[Current total mark : %d ]\r\n", total_score);
 					usart1_printf("%s", total_mark_message);
 					wifi_ap_send((uint8_t*) total_mark_message, strlen(total_mark_message));
 
 					// Choose to either enter questioning mode again for next question or exit.
 					// Display information: [Next Question]/[End the round]
+					HAL_Delay(1000);
 					char continue_or_end_message[100] =
 							"[Next Question]/[End the round] (input y/n)\r\n";
 					usart1_printf("%s", continue_or_end_message);
 					wifi_ap_send((uint8_t*) continue_or_end_message, strlen(continue_or_end_message));
-
-					Judge_waiting_flag = 1;
 				}
-
-				if (USART2_RX_STA == 1)
-				{
-					USART2_RX_STA = 0;
-
-					usart1_printf("Choice Receive : %s", USART2_RX_BUF);
-					char *recieve_choice = NULL;
-					char delims5[] = ":";
-					char delims6[] = "\r\n";
-					strtok((char*) USART2_RX_BUF, delims5);
-					recieve_choice = strtok(NULL, delims6);
-					usart1_printf("%s\r\n", recieve_choice);
-
-					char yes[] = "y";
-					char no[] = "n";
-					// Choose Continue
-					if (!strcmp(yes, recieve_choice))
-					{
-						char continue_message[100] = "[Another Round Started]\r\n";
-						usart1_printf("%s", continue_message);
-						wifi_ap_send((uint8_t*) continue_message, strlen(continue_message));
-
-						// Back to Questioning Mode
-						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-						STATUS = 0;
-					}
-					// Choose End
-					else if (!strcmp(no, recieve_choice))
-					{
-						char total_score_str[25];
-						itoa(total_score, total_score_str, 10);
-						char end_message[100] =
-								"[The Game is totally end !]\r\n[Your Final Score is : ";
-						strncat(end_message, total_score_str, 50);
-						strncat(end_message, "]\r\n", 10);
-						usart1_printf("%s", end_message);
-						wifi_ap_send((uint8_t*) end_message, strlen(end_message));
-
-						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-						END_GAME_FLAG = 1;
-					}
-					else
-					{
-						char wrong_input[100] = "[Wrong Input (y/n)]\r\n";
-						usart1_printf("%s", wrong_input);
-						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-						HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
-					}
-				}
+				break;
+			// Judging mode
+			case 2:
+//				if (USART2_RX_STA == 1)
+//				{
+//					USART2_RX_STA = 0;
+//					usart1_printf("Choice Receive : %s", USART2_RX_BUF);
+//					char *recieve_choice = NULL;
+//					char delims5[] = ":";
+//					char delims6[] = "\r\n";
+//					strtok((char*) USART2_RX_BUF, delims5);
+//					recieve_choice = strtok(NULL, delims6);
+//					usart1_printf("%s\r\n", recieve_choice);
+//
+//					char yes[] = "y";
+//					char no[] = "n";
+//					// Choose Continue
+//					if (!strcmp(yes, recieve_choice))
+//					{
+//						char continue_message[100] = "[Another Round Started]\r\n";
+//						usart1_printf("%s", continue_message);
+//						wifi_ap_send((uint8_t*) continue_message, strlen(continue_message));
+//
+//						// Back to Questioning Mode
+//						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+//						STATUS = 0;
+//					}
+//					// Choose End
+//					else if (!strcmp(no, recieve_choice))
+//					{
+//						char total_score_str[25];
+//						itoa(total_score, total_score_str, 10);
+//						char end_message[100] =
+//								"[The Game is totally end !]\r\n[Your Final Score is : ";
+//						strncat(end_message, total_score_str, 50);
+//						strncat(end_message, "]\r\n", 10);
+//						usart1_printf("%s", end_message);
+//						wifi_ap_send((uint8_t*) end_message, strlen(end_message));
+//
+//						// end the game
+//						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+//						END_GAME_FLAG = 1;
+//					}
+//					else
+//					{
+//						char wrong_input[100] = "[Wrong Input (y/n)]\r\n";
+//						usart1_printf("%s", wrong_input);
+//						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+//						HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+//					}
+//				}
 				break;
 			}
 		}

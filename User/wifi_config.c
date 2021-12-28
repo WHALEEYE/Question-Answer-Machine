@@ -137,7 +137,7 @@ uint8_t wifi_send_data(char *data, char *ack, uint16_t waittime)
 		}
 		if (TheGET != NULL)
 		{
-//			usart1_printf("ack:%s\r\n",(u8*)ack);
+			usart1_printf("ack:%s\r\n",(u8*)ack);
 			return 0;
 		}
 	}

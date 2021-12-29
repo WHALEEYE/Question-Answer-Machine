@@ -7,6 +7,8 @@
 #include "string.h"
 #include "stdlib.h"
 
+uint8_t State;
+
 uint16_t USART2_RX_STA = 0;
 uint8_t USART2_TX_BUF[USART2_MAX_SEND_LEN];
 uint8_t USART2_RX_BUF[USART2_MAX_RECV_LEN];
@@ -15,10 +17,6 @@ uint16_t USART1_RX_STA = 0;
 uint8_t USART1_RX_BUF[USART1_MAX_RECV_LEN];
 
 uint8_t TIMER_count = 0;
-uint8_t TIMER_MAX_count = 0;
-uint8_t countdown_flag = 0;
-
-uint8_t STATUS;
 
 extern TIM_HandleTypeDef htim3;
 
@@ -56,280 +54,249 @@ void usart2_printf(char *fmt, ...)
 
 void Test(void)
 {
-	char ANSWER[100];
-	char QUESTION[100];
-	char MAX_TIME[100];
-	char POINT[100];
-
-	int new_score = 0;
+	State = 0;
 	int total_score = 0;
 
-	int END_GAME_FLAG = 0;
-	int Judge_waiting_flag = 0;
+	Question *question;
+
+	Question questions[5] =
+	{
+	{ "Test Question A WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'A', 20, 20 },
+	{ "Test Question B WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'B', 10, 15 },
+	{ "Test Question C WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'C', 15, 15 },
+	{ "Test Question D WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'D', 25, 10 },
+	{ "Test Question E WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'C', 10, 10 } };
 
 	__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);                        //启动空闲中断
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-	HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN); //开启DMA接收
 	HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
-	usart1_printf("hello\r\n");
+	HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN); //开启DMA接收
 	uint8_t mode = 0;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
 	wifi_init(mode);
-	STATUS = 0;
-	while (1)
+	// Respondent
+	if (mode)
 	{
-		// Respondent
-		if (mode)
+		// Show "RESPONDENT" on LCD
+		LCD_Clear(WHITE);
+		POINT_COLOR = BLACK;
+		BACK_COLOR = WHITE;
+		LCD_ShowString(10, 20, 200, 24, 24, (uint8_t*) "RESPONDENT");
+		while (1)
 		{
-			wifi_echo(1);
+			if (USART2_RX_STA == 1)
+			{
+				usart1_printf("%s", USART2_RX_BUF);
+				LCD_Fill(10, 80, 210, 104, WHITE);
+				LCD_ShowString(10, 80, 200, 24, 16, USART2_RX_BUF);
+
+				USART2_RX_STA = 0;
+				memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+				HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+			}
+
 			if (USART1_RX_STA == 1)
 			{
 				USART1_RX_STA = 0;
 				usart2_printf("%s", USART1_RX_BUF);
 				memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
-				HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF,
-				USART1_MAX_RECV_LEN);
+				HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 			}
 		}
-		// Questioner
-		else
+	}
+	// Questioner
+	else
+	{
+		// Show "QUESTIONER" on LCD
+		LCD_Clear(WHITE);
+		POINT_COLOR = BLACK;
+		BACK_COLOR = WHITE;
+		LCD_ShowString(10, 20, 200, 24, 24, (uint8_t*) "QUESTIONER");
+		while (1)
 		{
-			switch (STATUS)
+			switch (State)
 			{
-			// Questioning mode
 			case 0:
-				// Wait until the question is received
-				if (USART1_RX_STA == 1 && countdown_flag == 0)
+				if (USART2_RX_STA == 1)
 				{
-					USART1_RX_STA = 0;
-					if (!strcmp("exit\r\n", (char*) USART1_RX_BUF))
-					{
-						STATUS = 2;
-						break;
-					}
-
-					// Read 4 part of a whole question
-					char delims1[] = "#";
-					char delims2[] = "\r\n";
-					char *result = NULL;
-					result = strtok((char*) USART1_RX_BUF, delims1);
-					if (result != NULL)
-					{
-						strcpy(QUESTION, result);
-						usart1_printf("%s\r\n", QUESTION);
-						result = strtok( NULL, delims1);
-					}
-					if (result != NULL)
-					{
-						strcpy(POINT, result);
-						usart1_printf("%s\r\n", POINT);
-						result = strtok( NULL, delims1);
-					}
-					if (result != NULL)
-					{
-						strcpy(MAX_TIME, result);
-						usart1_printf("%s\r\n", MAX_TIME);
-						result = strtok( NULL, delims2);
-					}
-					if (result != NULL)
-					{
-						strcpy(ANSWER, result);
-						usart1_printf("%s\r\n", ANSWER);
-					}
-
-					// Send the question to respondent
-					char WHOLE_QUESTION[500];
-					strncat(WHOLE_QUESTION, "[", 5);
-					strncat(WHOLE_QUESTION, QUESTION, 50);
-					strncat(WHOLE_QUESTION, "][", 5);
-					strncat(WHOLE_QUESTION, POINT, 50);
-					strncat(WHOLE_QUESTION, "][", 5);
-					strncat(WHOLE_QUESTION, MAX_TIME, 50);
-					strncat(WHOLE_QUESTION, "]\r\n", 10);
-					usart1_printf("%s", WHOLE_QUESTION);
-					wifi_ap_send((uint8_t*) WHOLE_QUESTION, strlen(WHOLE_QUESTION));
-
-					// Clear the buffer and refuse to read question from USART anymore
-					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
-					memset(WHOLE_QUESTION, 0, strlen(WHOLE_QUESTION));
-
-					// Start count down
-					usart1_printf("[start count down]\r\n");
-					char countdown_start_message[500] = "[start count down]\r\n";
-					wifi_ap_send((uint8_t*) countdown_start_message,
-							strlen(countdown_start_message));
-					TIMER_count = 0;
-					TIMER_MAX_count = atoi(MAX_TIME);
-					countdown_flag = 1;
-					HAL_TIM_Base_Start_IT(&htim3);
-					STATUS = 1;
-				}
-				break;
-				// Answer-receiving mode
-			case 1:
-				// Still counting down
-				if (countdown_flag == 1)
-				{
-					if (USART2_RX_STA == 1)
-					{
-						usart1_printf("Answer Receive : %s", USART2_RX_BUF);
-						char *recieve_answer = NULL;
-						char delims3[] = ":";
-						char delims4[] = "\r\n";
-						strtok((char*) USART2_RX_BUF, delims3);
-						recieve_answer = strtok(NULL, delims4);
-						usart1_printf("%s\r\n", recieve_answer);
-						// Answer is correct
-						if (!strcmp(ANSWER, recieve_answer))
-						{
-							// add new score
-							new_score = atoi(POINT);
-
-							// report to respondent
-							char answer_correct_message[500] =
-									"[Answer Correct] [Points awarded : ";
-							strncat(answer_correct_message, POINT, 50);
-							strncat(answer_correct_message, "]\r\n", 10);
-							usart1_printf("%s", answer_correct_message);
-							wifi_ap_send((uint8_t*) answer_correct_message,
-									strlen(answer_correct_message));
-
-							// clear DMA2 cache and continue receiving
-							USART2_RX_STA = 0;
-							memset((char*) USART2_RX_BUF, 0,
-							USART2_MAX_RECV_LEN);
-							HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF,
-							USART2_MAX_RECV_LEN);
-
-							// stop the count down immediately and enter the judging mode
-							usart1_printf("[count down over]\r\n");
-							countdown_flag = 0;
-							TIMER_count = 0;
-							TIMER_MAX_count = 0;
-							HAL_TIM_Base_Stop_IT(&htim3);
-							STATUS = 2;
-
-							//Respondent’s awarded point on this specific question should be added to total points
-							total_score += new_score;
-
-							// Display respondent’s current total mark: [Current total mark]
-							HAL_Delay(1000);
-							char total_mark_message[500];
-							sprintf(total_mark_message, "[Current total mark : %d ]\r\n", total_score);
-							usart1_printf("%s", total_mark_message);
-							wifi_ap_send((uint8_t*) total_mark_message, strlen(total_mark_message));
-
-							// Choose to either enter questioning mode again for next question or exit.
-							// Display information: [Next Question]/[End the round]
-							HAL_Delay(1000);
-							char continue_or_end_message[100] =
-									"[Next Question]/[End the round] (input y/n)\r\n";
-							usart1_printf("%s", continue_or_end_message);
-							wifi_ap_send((uint8_t*) continue_or_end_message, strlen(continue_or_end_message));
-						}
-						// Answer is incorrect
-						else
-						{
-							// add new score
-							new_score = 0;
-
-							// report to respondent
-							char answer_incorrect_message[500] =
-									"[Wrong Answer][Points awarded : 0]\r\n";
-							usart1_printf("%s", answer_incorrect_message);
-							wifi_ap_send((uint8_t*) answer_incorrect_message, strlen(answer_incorrect_message));
-
-							// clear DMA2 cache and continue receiving
-							USART2_RX_STA = 0;
-							memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-							HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
-						}
-					}
-				}
-				// Finish counting down
-				else
-				{
-					// Send message to respondent
-					char countdown_finish_message[50] =
-							"[Time Exceed Limit]\r\n";
-					usart1_printf("%s", countdown_finish_message);
-					wifi_ap_send((uint8_t*) countdown_finish_message,
-							strlen(countdown_finish_message));
-
-					// clear DMA2 cache and continue receiving
 					USART2_RX_STA = 0;
 					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF,
-					USART2_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+				}
+				if (USART1_RX_STA == 1)
+				{
+					USART1_RX_STA = 0;
+					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+				}
+				LCD_ShowString(10, 40, 200, 100, 24, (uint8_t*) "Please Choose One Question From 0-4.");
+				State = 1;
+				break;
+			case 1:
+				if (USART2_RX_STA == 1)
+				{
+					USART2_RX_STA = 0;
+					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+				}
+				if (USART1_RX_STA == 1)
+				{
+					USART1_RX_STA = 0;
+					usart1_printf("Choice Received\r\n");
+					int idx = USART1_RX_BUF[0] - 48;
+					if (idx < 0 || idx > 4)
+					{
+						LCD_ShowString(10, 150, 200, 100, 16, (uint8_t*) "Illegal.");
+						memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+						HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+						break;
+					}
+					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 
-					// enter the judging mode
-					STATUS = 2;
+					// TODO: Should be parsed from the input
+					TIMER_count = question->time_limit;
 
-					// Display respondent’s current total mark: [Current total mark]
+					question = &(questions[idx]);
+					uint8_t length = strlen((char*) question->desc);
+					wifi_ap_send((uint8_t*) question->desc, length);
+
+					// Show "Answer Receiving" on LCD
+					LCD_Clear(WHITE);
+					LCD_ShowString(10, 40, 200, 24, 24, (uint8_t*) "Answer Receiving");
+
 					HAL_Delay(1000);
-					char total_mark_message[500];
-					sprintf(total_mark_message, "[Current total mark : %d ]\r\n", total_score);
-					usart1_printf("%s", total_mark_message);
-					wifi_ap_send((uint8_t*) total_mark_message, strlen(total_mark_message));
+					HAL_TIM_Base_Start_IT(&htim3);
 
-					// Choose to either enter questioning mode again for next question or exit.
-					// Display information: [Next Question]/[End the round]
-					HAL_Delay(1000);
-					char continue_or_end_message[100] =
-							"[Next Question]/[End the round] (input y/n)\r\n";
-					usart1_printf("%s", continue_or_end_message);
-					wifi_ap_send((uint8_t*) continue_or_end_message, strlen(continue_or_end_message));
+					// Change the state
+					State = 2;
 				}
 				break;
-			// Judging mode
 			case 2:
-//				if (USART2_RX_STA == 1)
-//				{
-//					USART2_RX_STA = 0;
-//					usart1_printf("Choice Receive : %s", USART2_RX_BUF);
-//					char *recieve_choice = NULL;
-//					char delims5[] = ":";
-//					char delims6[] = "\r\n";
-//					strtok((char*) USART2_RX_BUF, delims5);
-//					recieve_choice = strtok(NULL, delims6);
-//					usart1_printf("%s\r\n", recieve_choice);
-//
-//					char yes[] = "y";
-//					char no[] = "n";
-//					// Choose Continue
-//					if (!strcmp(yes, recieve_choice))
-//					{
-//						char continue_message[100] = "[Another Round Started]\r\n";
-//						usart1_printf("%s", continue_message);
-//						wifi_ap_send((uint8_t*) continue_message, strlen(continue_message));
-//
-//						// Back to Questioning Mode
-//						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-//						STATUS = 0;
-//					}
-//					// Choose End
-//					else if (!strcmp(no, recieve_choice))
-//					{
-//						char total_score_str[25];
-//						itoa(total_score, total_score_str, 10);
-//						char end_message[100] =
-//								"[The Game is totally end !]\r\n[Your Final Score is : ";
-//						strncat(end_message, total_score_str, 50);
-//						strncat(end_message, "]\r\n", 10);
-//						usart1_printf("%s", end_message);
-//						wifi_ap_send((uint8_t*) end_message, strlen(end_message));
-//
-//						// end the game
-//						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-//						END_GAME_FLAG = 1;
-//					}
-//					else
-//					{
-//						char wrong_input[100] = "[Wrong Input (y/n)]\r\n";
-//						usart1_printf("%s", wrong_input);
-//						memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-//						HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
-//					}
-//				}
+				if (USART2_RX_STA == 1)
+				{
+					USART2_RX_STA = 0;
+
+					char *received_message;
+					char user_answer;
+					strtok((char*) USART2_RX_BUF, ":");
+					received_message = strtok(NULL, ":");
+					user_answer = received_message[0];
+
+					// Show the answer on the LCD
+					LCD_ShowString(30, 65, 200, 24, 16, (uint8_t*) received_message);
+
+					// Show contents through USART
+					usart1_printf("Received message: %s\r\n", received_message);
+					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+
+					if (user_answer == question->correct_answer)
+					{
+						// Answer is correct
+						// Stop the timer
+						HAL_TIM_Base_Stop_IT(&htim3);
+
+						// Send the earned score
+						char correct_info[100];
+						sprintf(correct_info, "[Answer Correct] [%d]\r\n", question->value);
+						uint8_t length = strlen(correct_info);
+						wifi_ap_send((uint8_t*) correct_info, length);
+						total_score += question->value;
+
+						HAL_Delay(1000);
+
+						// Change State
+						State = 3;
+					}
+					else
+					{
+						// Answer is incorrect
+						// Send the incorrect score
+						char *correct_info = "[Wrong Answer] [0]\r\n";
+						uint8_t length = strlen(correct_info);
+						wifi_ap_send((uint8_t*) correct_info, length);
+					}
+
+				}
+				if (USART1_RX_STA == 1)
+				{
+					USART1_RX_STA = 0;
+					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+				}
+				break;
+			case 3:
+				if (USART2_RX_STA == 1)
+				{
+					USART2_RX_STA = 0;
+					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+				}
+				if (USART1_RX_STA == 1)
+				{
+					USART1_RX_STA = 0;
+					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+				}
+
+				// Show "Judging..." on LCD
+				LCD_Clear(WHITE);
+				POINT_COLOR = BLACK;
+				BACK_COLOR = WHITE;
+				LCD_ShowString(10, 40, 200, 24, 24, (uint8_t*) "Judging...");
+
+				// Send the total score
+				char result[100];
+				sprintf(result, "total score: %d\r\n", total_score);
+				uint8_t length = strlen((char*) result);
+				wifi_ap_send((uint8_t*) result, length);
+
+				HAL_Delay(1000);
+
+				// Ask for restart or not
+				LCD_ShowString(10, 80, 200, 24, 16, (uint8_t*) "Restart? y/n");
+
+				// Change the State
+				State = 4;
+				break;
+			case 4:
+				if (USART2_RX_STA == 1)
+				{
+					USART2_RX_STA = 0;
+					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+				}
+				if (USART1_RX_STA == 1)
+				{
+					USART1_RX_STA = 0;
+					char input = USART1_RX_BUF[0];
+					if (input == 'y' || input == 'Y')
+					{
+						// Show "Waiting..." on LCD
+						LCD_Clear(WHITE);
+						POINT_COLOR = BLACK;
+						BACK_COLOR = WHITE;
+						LCD_ShowString(10, 40, 200, 24, 24, (uint8_t*) "Waiting...");
+
+						State = 0;
+					}
+					else if (input == 'n' || input == 'N')
+					{
+						// Show "CLOSED" on LCD
+						LCD_Clear(WHITE);
+						POINT_COLOR = BLACK;
+						BACK_COLOR = WHITE;
+						LCD_ShowString(10, 40, 200, 24, 24, (uint8_t*) "CLOSED");
+
+						State = 5;
+					}
+					else
+					{
+						usart1_printf("Illegal input, please input again.\r\n");
+					}
+					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
+					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
+				}
 				break;
 			}
 		}
@@ -366,20 +333,29 @@ void UART1_IDLECallback(UART_HandleTypeDef *huart)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	TIMER_count += 1;
 	usart1_printf("%d\r\n", TIMER_count);
-	char counting_message[25];
-	itoa(TIMER_count, counting_message, 10);
-	strncat(counting_message, "\r\n", 10);
-	wifi_ap_send((uint8_t*) counting_message, strlen(counting_message));
-	if (TIMER_count >= TIMER_MAX_count)
+	if (TIMER_count == 0)
 	{
 		usart1_printf("[count down over]\r\n");
-		countdown_flag = 0;
-		TIMER_count = 0;
-		TIMER_MAX_count = 0;
-		// Close the interrupt and open DMA receive
+		char *counting_message = "[Time Exceed Limit]\r\n";
+		uint8_t len = strlen(counting_message);
+		wifi_ap_send((uint8_t*) counting_message, len);
+
+		// Shut down the timer
 		HAL_TIM_Base_Stop_IT(&htim3);
+
+		// Set the state to judging mode
+		HAL_Delay(1000);
+
+		State = 3;
 	}
+	else
+	{
+		char counting_message[25];
+		sprintf(counting_message, "time left: %d\r\n", TIMER_count);
+		uint8_t len = strlen(counting_message);
+		wifi_ap_send((uint8_t*) counting_message, len);
+	}
+	TIMER_count--;
 }
 

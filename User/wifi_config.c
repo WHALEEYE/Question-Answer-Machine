@@ -25,13 +25,6 @@ void wifi_echo(uint8_t mode)
 {
 	if (USART2_RX_STA == 1)		//接收到一次数据了
 	{
-		LCD_Clear(WHITE);
-		POINT_COLOR = BLACK;
-		BACK_COLOR = WHITE;
-		if (*USART2_RX_BUF == '\r' || *USART2_RX_BUF == '\n')
-			LCD_ShowString(30, 40, 200, 24, 24, USART2_RX_BUF + 2);
-		else
-			LCD_ShowString(30, 40, 200, 24, 24, USART2_RX_BUF);
 		usart1_printf("%s", USART2_RX_BUF);	//发送到串口
 		if (mode)
 		{
@@ -137,7 +130,7 @@ uint8_t wifi_send_data(char *data, char *ack, uint16_t waittime)
 		}
 		if (TheGET != NULL)
 		{
-			usart1_printf("ack:%s\r\n",(u8*)ack);
+//			usart1_printf("ack:%s\r\n",(u8*)ack);
 			return 0;
 		}
 	}

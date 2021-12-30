@@ -2,20 +2,16 @@
 #define TEST_H_
 #include "main.h"
 
-#define USART2_MAX_RECV_LEN		50					//最大接收缓存字节数
-#define USART2_MAX_SEND_LEN		50					//最大发送缓存字节数
+#define USART2_MAX_RECV_LEN		140					//最大接收缓存字节数
+#define USART2_MAX_SEND_LEN		140					//最大发送缓存字节数
 
 #define USART1_MAX_RECV_LEN     50
 
-typedef enum QState{
-	CHOOSING,
-	RECVING,
-	JUDGING,
-	FINISHED
+typedef enum QState {
+	CHOOSING, RECVING, JUDGING, FINISHED
 } QState;
 
-typedef struct Question
-{
+typedef struct Question {
 	const char *desc;
 	const char *choice1;
 	const char *choice2;
@@ -24,6 +20,7 @@ typedef struct Question
 	const char correct_answer;
 	const int value;
 	const int time_limit;
+	const uint16_t *image;
 } Question;
 
 extern uint16_t USART2_RX_STA;

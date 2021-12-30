@@ -1,7 +1,7 @@
 #include "lcd.h"
 //#include "stdlib.h"
-#include "font.h"
 //#include "usart.h"
+#include "font.h"
 //#include "delay.h"
 //////////////////////////////////////////////////////////////////////////////////	 
 //本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -3178,3 +3178,12 @@ void LCD_ShowString(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
 	}
 }
 
+void LCD_ShowImage(uint16_t *image_array, uint16_t x, uint16_t y,
+		uint16_t width, uint16_t height) {
+	uint16_t i,j;
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			LCD_Fast_DrawPoint(x + j, y + i, image_array[i * width + j]);
+		}
+	}
+}

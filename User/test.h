@@ -7,6 +7,13 @@
 
 #define USART1_MAX_RECV_LEN     50
 
+typedef enum QState{
+	CHOOSING,
+	RECVING,
+	JUDGING,
+	FINISHED
+} QState;
+
 typedef struct Question
 {
 	const char *desc;

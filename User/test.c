@@ -61,35 +61,91 @@ void Test(void)
 
 	Question questions[5] =
 	{
-	{ "Test Question A WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'A', 20, 20 },
-	{ "Test Question B WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'B', 10, 15 },
-	{ "Test Question C WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'C', 15, 15 },
-	{ "Test Question D WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'D', 25, 10 },
-	{ "Test Question E WERTYUIOPASDFGHJKLZXCVBNM\r\n", "Yes", "No", "IDK", "DUNJIAO", 'C', 10, 10 } };
+	{ "Test Question A DDDDDD", "Yes", "No", "IDK", "DUNJIAO", 'A', 20, 20 },
+	{ "Test Question B WWWWWW", "Yes", "No", "IDK", "DUNJIAO", 'B', 10, 15 },
+	{ "Test Question C RRRRRR", "Yes", "No", "IDK", "DUNJIAO", 'C', 15, 15 },
+	{ "Test Question D NNNNNN", "Yes", "No", "IDK", "DUNJIAO", 'D', 25, 10 },
+	{ "Test Question E FFFFFF", "Yes", "No", "IDK", "DUNJIAO", 'C', 10, 10 } };
 
 	__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);                        //启动空闲中断
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 	HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN); //开启DMA接收
+
 	uint8_t mode = 0;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
+
 	wifi_init(mode);
 	// Respondent
 	if (mode)
 	{
+
 		// Show "RESPONDENT" on LCD
 		LCD_Clear(WHITE);
 		POINT_COLOR = BLACK;
 		BACK_COLOR = WHITE;
 		LCD_ShowString(10, 20, 200, 24, 24, (uint8_t*) "RESPONDENT");
+		POINT_COLOR = RED;
+		LCD_ShowString(10, 80, 200, 24, 24, (uint8_t*) "CS301");
+		LCD_ShowString(10, 110, 200, 24, 24, (uint8_t*) "Question");
+		LCD_ShowString(10, 140, 200, 24, 24, (uint8_t*) "Answer");
+		LCD_ShowString(10, 170, 200, 24, 24, (uint8_t*) "Machine");
+		POINT_COLOR = BLACK;
+		LCD_ShowString(10, 280, 200, 24, 16, (uint8_t*) "Waiting For Question");
+
 		while (1)
 		{
 			if (USART2_RX_STA == 1)
 			{
-				usart1_printf("%s", USART2_RX_BUF);
-				LCD_Fill(10, 80, 210, 104, WHITE);
-				LCD_ShowString(10, 80, 200, 24, 16, USART2_RX_BUF);
-
 				USART2_RX_STA = 0;
+				char choice[50];
+				switch (USART2_RX_BUF[0])
+				{
+				case 'q':
+					LCD_Clear(WHITE);
+					LCD_ShowString(10, 20, 220, 90, 24, (uint8_t*) USART2_RX_BUF + 2);
+					break;
+				case 'a':
+					sprintf(choice, "A. %s", USART2_RX_BUF + 2);
+					LCD_ShowString(10, 120, 220, 24, 24, (uint8_t*) choice);
+					break;
+				case 'b':
+					sprintf(choice, "B. %s", USART2_RX_BUF + 2);
+					LCD_ShowString(10, 150, 220, 24, 24, (uint8_t*) choice);
+					break;
+				case 'c':
+					sprintf(choice, "C. %s", USART2_RX_BUF + 2);
+					LCD_ShowString(10, 180, 220, 24, 24, (uint8_t*) choice);
+					break;
+				case 'd':
+					sprintf(choice, "D. %s", USART2_RX_BUF + 2);
+					LCD_ShowString(10, 210, 220, 24, 24, (uint8_t*) choice);
+					LCD_ShowString(10, 260, 120, 24, 24, (uint8_t*) "Time Left: ");
+					break;
+				case 't':
+					LCD_Fill(140, 260, 180, 290, WHITE);
+					LCD_ShowString(140, 260, 40, 24, 24, (uint8_t*) USART2_RX_BUF + 2);
+					break;
+				case 'i':
+					LCD_Fill(10, 290, 230, 310, WHITE);
+					LCD_ShowString(10, 290, 220, 16, 16, (uint8_t*) USART2_RX_BUF + 2);
+					break;
+				case 'M':
+					LCD_Clear(WHITE);
+//					LCD_Fill(10, 110, 230, 310, WHITE);
+					LCD_ShowString(10, 120, 220, 16, 16, (uint8_t*) USART2_RX_BUF + 2);
+					POINT_COLOR = RED;
+					LCD_ShowString(10, 140, 220, 24, 24, (uint8_t*) "Total Score");
+					POINT_COLOR = BLACK;
+					break;
+				case 'S':
+					POINT_COLOR = RED;
+					LCD_ShowString(10, 170, 220, 24, 24, (uint8_t*) USART2_RX_BUF + 2);
+					POINT_COLOR = BLACK;
+					LCD_ShowString(10, 280, 200, 24, 16, (uint8_t*) "Waiting For Question");
+					break;
+				}
+				usart1_printf("%s\r\n", USART2_RX_BUF);
+
 				memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
 				HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
 			}
@@ -128,7 +184,7 @@ void Test(void)
 					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
 					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 				}
-				LCD_ShowString(10, 40, 200, 100, 24, (uint8_t*) "Please Choose One Question From 0-4.");
+				LCD_ShowString(10, 40, 220, 100, 24, (uint8_t*) "Please Choose One Question From 0-4.");
 				State = 1;
 				break;
 			case 1:
@@ -141,7 +197,6 @@ void Test(void)
 				if (USART1_RX_STA == 1)
 				{
 					USART1_RX_STA = 0;
-					usart1_printf("Choice Received\r\n");
 					int idx = USART1_RX_BUF[0] - 48;
 					if (idx < 0 || idx > 4)
 					{
@@ -153,12 +208,34 @@ void Test(void)
 					memset((char*) USART1_RX_BUF, 0, USART1_MAX_RECV_LEN);
 					HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 
-					// TODO: Should be parsed from the input
+					question = &(questions[idx]);
+
 					TIMER_count = question->time_limit;
 
-					question = &(questions[idx]);
-					uint8_t length = strlen((char*) question->desc);
-					wifi_ap_send((uint8_t*) question->desc, length);
+					char question_str[50];
+					sprintf(question_str, "q %s [%d] [%d s]", question->desc, question->value, question->time_limit);
+					uint8_t length = strlen(question_str);
+					wifi_ap_send((uint8_t*) question_str, length);
+					HAL_Delay(200);
+
+					sprintf(question_str, "a %s", question->choice1);
+					length = strlen(question_str);
+					wifi_ap_send((uint8_t*) question_str, length);
+					HAL_Delay(200);
+
+					sprintf(question_str, "b %s", question->choice2);
+					length = strlen(question_str);
+					wifi_ap_send((uint8_t*) question_str, length);
+					HAL_Delay(200);
+
+					sprintf(question_str, "c %s", question->choice3);
+					length = strlen(question_str);
+					wifi_ap_send((uint8_t*) question_str, length);
+					HAL_Delay(200);
+
+					sprintf(question_str, "d %s", question->choice4);
+					length = strlen(question_str);
+					wifi_ap_send((uint8_t*) question_str, length);
 
 					// Show "Answer Receiving" on LCD
 					LCD_Clear(WHITE);
@@ -182,13 +259,13 @@ void Test(void)
 					received_message = strtok(NULL, ":");
 					user_answer = received_message[0];
 
-					// Show the answer on the LCD
-					LCD_ShowString(30, 65, 200, 24, 16, (uint8_t*) received_message);
+//					// Show the answer on the LCD
+//					LCD_ShowString(30, 65, 200, 24, 16, (uint8_t*) received_message);
 
-					// Show contents through USART
-					usart1_printf("Received message: %s\r\n", received_message);
-					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
+//					// Show contents through USART
+//					usart1_printf("Received message: %s\r\n", received_message);
+//					memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
+//					HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);
 
 					if (user_answer == question->correct_answer)
 					{
@@ -197,8 +274,8 @@ void Test(void)
 						HAL_TIM_Base_Stop_IT(&htim3);
 
 						// Send the earned score
-						char correct_info[100];
-						sprintf(correct_info, "[Answer Correct] [%d]\r\n", question->value);
+						char correct_info[50];
+						sprintf(correct_info, "M [Answer Correct] [%d]", question->value);
 						uint8_t length = strlen(correct_info);
 						wifi_ap_send((uint8_t*) correct_info, length);
 						total_score += question->value;
@@ -212,9 +289,9 @@ void Test(void)
 					{
 						// Answer is incorrect
 						// Send the incorrect score
-						char *correct_info = "[Wrong Answer] [0]\r\n";
-						uint8_t length = strlen(correct_info);
-						wifi_ap_send((uint8_t*) correct_info, length);
+						char *incorrect_info = "i [Wrong Answer] [0]";
+						uint8_t length = strlen(incorrect_info);
+						wifi_ap_send((uint8_t*) incorrect_info, length);
 					}
 
 				}
@@ -246,8 +323,8 @@ void Test(void)
 				LCD_ShowString(10, 40, 200, 24, 24, (uint8_t*) "Judging...");
 
 				// Send the total score
-				char result[100];
-				sprintf(result, "total score: %d\r\n", total_score);
+				char result[50];
+				sprintf(result, "S %d", total_score);
 				uint8_t length = strlen((char*) result);
 				wifi_ap_send((uint8_t*) result, length);
 
@@ -333,11 +410,9 @@ void UART1_IDLECallback(UART_HandleTypeDef *huart)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	usart1_printf("%d\r\n", TIMER_count);
 	if (TIMER_count == 0)
 	{
-		usart1_printf("[count down over]\r\n");
-		char *counting_message = "[Time Exceed Limit]\r\n";
+		char *counting_message = "M [Time Exceed Limit]";
 		uint8_t len = strlen(counting_message);
 		wifi_ap_send((uint8_t*) counting_message, len);
 
@@ -352,7 +427,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	else
 	{
 		char counting_message[25];
-		sprintf(counting_message, "time left: %d\r\n", TIMER_count);
+		sprintf(counting_message, "t %d", TIMER_count);
 		uint8_t len = strlen(counting_message);
 		wifi_ap_send((uint8_t*) counting_message, len);
 	}

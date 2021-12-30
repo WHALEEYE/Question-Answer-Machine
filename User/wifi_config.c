@@ -77,7 +77,7 @@ uint8_t wifi_send_cmd(char *cmd, char *ack, uint16_t waittime)
 	uint8_t *TheGET;
 	unsigned int over_time = 0;
 	memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
-	for (int t = 0; t < 4; t++)					//收不到回复的情况下进行4次命令发送
+	for (int t = 0; t < 1; t++)					//收不到回复的情况下进行4次命令发送
 	{
 		usart2_printf("%s\r\n", cmd);	//发送命令
 		TheGET = NULL;
@@ -142,10 +142,11 @@ uint8_t wifi_send_data(char *data, char *ack, uint16_t waittime)
 void wifi_ap_send(uint8_t *data_add, uint8_t len)
 {
 	char *p;
-	char cmd[16];
+	char cmd[20];
 	p = (char*) data_add;
 	sprintf((char*) cmd, "AT+CIPSEND=0,%d", len);  //0，网络连接ID号(0 ~ 4)
 	wifi_send_cmd(cmd, "OK", 200);  //发送指定长度的数据
+//	usart1_printf("cmd: %s\r\np: %s\r\n", cmd, p);
 	wifi_send_data(p, "OK", 100);  //发送指定长度的数据
 }
 

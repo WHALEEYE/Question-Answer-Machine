@@ -72,7 +72,7 @@ void Test(void)
 	HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 	HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN); //开启DMA接收
 
-	uint8_t mode = 0;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
+	uint8_t mode = 1;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
 
 	wifi_init(mode);
 	// Respondent
@@ -130,8 +130,8 @@ void Test(void)
 					LCD_ShowString(10, 290, 220, 16, 16, (uint8_t*) USART2_RX_BUF + 2);
 					break;
 				case 'M':
-					LCD_Clear(WHITE);
-//					LCD_Fill(10, 110, 230, 310, WHITE);
+//					LCD_Clear(WHITE);
+					LCD_Fill(10, 110, 230, 310, WHITE);
 					LCD_ShowString(10, 120, 220, 16, 16, (uint8_t*) USART2_RX_BUF + 2);
 					POINT_COLOR = RED;
 					LCD_ShowString(10, 140, 220, 24, 24, (uint8_t*) "Total Score");
@@ -144,7 +144,6 @@ void Test(void)
 					LCD_ShowString(10, 280, 200, 24, 16, (uint8_t*) "Waiting For Question");
 					break;
 				}
-				usart1_printf("%s\r\n", USART2_RX_BUF);
 
 				memset((char*) USART2_RX_BUF, 0, USART2_MAX_RECV_LEN);
 				HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN);

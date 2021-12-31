@@ -1,5 +1,5 @@
+#include <qam.h>
 #include "wifi_config.h"
-#include "test.h"
 #include "usart.h"
 #include "lcd.h"
 //用户配置区

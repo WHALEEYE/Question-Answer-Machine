@@ -1,5 +1,5 @@
-#ifndef TEST_H_
-#define TEST_H_
+#ifndef QAM_H_
+#define QAM_H_
 #include "main.h"
 
 #define USART2_MAX_RECV_LEN		50					//最大接收缓存字节数
@@ -32,6 +32,6 @@ extern uint8_t USART2_RX_BUF[USART2_MAX_RECV_LEN];
 
 void usart1_printf(char *fmt, ...);
 void usart2_printf(char *fmt, ...);
-void Test(void);
+void QAM_Start(void);
 
-#endif /* TEST_H_ */
+#endif /* QAM_H_ */

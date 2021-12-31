@@ -1,4 +1,4 @@
-#include "test.h"
+#include <qam.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include "usart.h"
@@ -52,14 +52,14 @@ void usart2_printf(char *fmt, ...)
 	HAL_UART_Transmit(&huart2, (uint8_t*) send_message, i, 1000);
 }
 
-void Test(void)
+void QAM_Start(void)
 {
 	__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);                        //启动空闲中断
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart1, USART1_RX_BUF, USART1_MAX_RECV_LEN);
 	HAL_UART_Receive_DMA(&huart2, USART2_RX_BUF, USART2_MAX_RECV_LEN); //开启DMA接收
 
-	uint8_t mode = 0;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
+	uint8_t mode = 1;  //两个wifi模块配置的模式为0和1，连接后TCP客户端为透传，TCP服务器是根据端口进行数据发送
 
 	wifi_init(mode);
 	// Respondent
@@ -167,11 +167,11 @@ void Test(void)
 
 		Question questions[5] =
 		{
-		{ "Test Question A DDDDDD", "Yes", "No", "IDK", "DUNJIAO", 'A', 20, 20 },
-		{ "Test Question B WWWWWW", "Yes", "No", "IDK", "DUNJIAO", 'B', 10, 15 },
-		{ "Test Question C RRRRRR", "Yes", "No", "IDK", "DUNJIAO", 'C', 15, 15 },
-		{ "Test Question D NNNNNN", "Yes", "No", "IDK", "DUNJIAO", 'D', 25, 10 },
-		{ "Test Question E FFFFFF", "Yes", "No", "IDK", "DUNJIAO", 'C', 10, 10 } };
+		{ "Which aren't mammals?", "Humans", "Whales", "Foxes", "Stone", 'D', 20, 20 },
+		{ "Please choose A.", "Test answer A", "Test answer B", "Test answer C", "Test answer D", 'B', 10, 15 },
+		{ "There is ____ elephant in the zoo.", "a", "an", "the", "/", 'B', 15, 15 },
+		{ "There are ____ old women.", "an", "much", "a", "many", 'D', 25, 10 },
+		{ "Please tell me ____ yourself", "of", "for", "with", "about", 'D', 10, 10 } };
 
 		// Show "QUESTIONER" on LCD
 		LCD_Clear(WHITE);

@@ -1,2 +1,3 @@
-分块开启wifi模块进行测试，status2 功能全部关闭测试十分稳定，但也有可能是测试时间太长的问题，下次测试时反着测。 开放status2 部分功能后，仍有几率测试成功。
+# Question & Answer Machine
 
+A remote question and answering machine is implemented on STM32 boards. It is divided into question and answer sides and supports WIFI communication between the two to deliver the question information, as well as feedback on the corresponding answers.
